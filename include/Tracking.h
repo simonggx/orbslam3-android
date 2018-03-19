@@ -25,7 +25,6 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
-#include"Viewer.h"
 #include"FrameDrawer.h"
 #include"Map.h"
 #include"LocalMapping.h"
@@ -35,7 +34,6 @@
 #include"KeyFrameDatabase.h"
 #include"ORBextractor.h"
 #include "Initializer.h"
-#include "MapDrawer.h"
 #include "System.h"
 
 #include <mutex>
@@ -49,6 +47,7 @@ class Map;
 class LocalMapping;
 class LoopClosing;
 class System;
+class MapDrawer;
 
 class Tracking
 {  
@@ -174,9 +173,9 @@ protected:
     System* mpSystem;
     
     //Drawers
-    Viewer* mpViewer;
+    Viewer* mpViewer = NULL;
     FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    MapDrawer* mpMapDrawer = NULL;
 
     //Map
     Map* mpMap;
