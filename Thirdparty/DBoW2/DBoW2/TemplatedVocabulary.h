@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <opencv2/core/core.hpp>
 #include <limits>
+#include <iostream>
 
 #include "FeatureVector.h"
 #include "BowVector.h"
@@ -245,6 +246,12 @@ public:
    * @param filename
    */
   void saveToTextFile(const std::string &filename) const;  
+
+
+  bool loadFromBinaryFile(const std::string &filename);
+
+//save in little endian
+  void saveToBinaryFile(const std::string &filename) const;
 
   /**
    * Saves the vocabulary into a file
@@ -1446,6 +1453,112 @@ void TemplatedVocabulary<TDescriptor,F>::saveToTextFile(const std::string &filen
     }
 
     f.close();
+}
+
+// --------------------------------------------------------------------------
+
+template<class TDescriptor, class F>
+void TemplatedVocabulary<TDescriptor, F>::saveToBinaryFile(const std::string &filename) const
+{
+    std::cout << "save voc to binaray file {}" <<  filename << std::endl;
+    std::ofstream f;
+    f.open(filename.c_str(), ios_base::binary);
+    if (!f.is_open())
+    {
+        std::cout << "open file {} fail!" << filename << std::endl;
+        return;
+    }
+    int32_t tmp_int32t = m_k;
+    f.write((const char *)&tmp_int32t, sizeof(tmp_int32t));
+    tmp_int32t = m_L;
+    f.write((const char *)&tmp_int32t, sizeof(tmp_int32t));
+    tmp_int32t = m_scoring;
+    f.write((const char *)&tmp_int32t, sizeof(tmp_int32t));
+    tmp_int32t = m_weighting;
+    f.write((const char *)&tmp_int32t, sizeof(tmp_int32t));
+
+    uint32_t tmp_uint32t = m_nodes.size() - 1;
+    f.write((const char *)&tmp_uint32t, sizeof(tmp_uint32t));
+    std::cout << "node number :" << m_nodes.size() - 1 << std::endl;
+
+    size_t node_size = 4 + 1 + F::L + sizeof(double);
+    char buf[node_size];
+    for (size_t i = 1; i < m_nodes.size(); ++i)
+    {
+        const Node &node = m_nodes[i];
+        tmp_uint32t = node.parent;
+        memcpy(buf, &tmp_uint32t, 4);
+        uint8_t is_leaf = node.isLeaf() ? 1 : 0;
+        memcpy(buf + 4, &is_leaf, 1);
+        memcpy(buf + 5, node.descriptor.data, F::L);
+        memcpy(buf + 5 + F::L, &node.weight, sizeof(double));
+        f.write(buf, node_size);
+    }
+}
+
+// --------------------------------------------------------------------------
+template<class TDescriptor, class F>
+bool TemplatedVocabulary<TDescriptor, F>::loadFromBinaryFile(const std::string &filename)
+{
+    std::cout << "read voc from binary file {}" << filename << std::endl;
+    std::ifstream f;
+    f.open(filename.c_str(), ios_base::binary);
+    if (!f.is_open())
+    {
+        std::cout << "open file {} fail!" << filename << std::endl;
+        return false;
+    }
+    m_words.clear();
+    m_nodes.clear();
+    int32_t tmp_int32t;
+    uint32_t node_num;
+    f.read((char *)&tmp_int32t, sizeof(tmp_int32t));
+    m_k = tmp_int32t;
+    f.read((char *)&tmp_int32t, sizeof(tmp_int32t));
+    m_L = tmp_int32t;
+    f.read((char *)&tmp_int32t, sizeof(tmp_int32t));
+    m_scoring = (ScoringType)tmp_int32t;
+    f.read((char *)&tmp_int32t, sizeof(tmp_int32t));
+    m_weighting = (WeightingType)tmp_int32t;
+    f.read((char *)&node_num, sizeof(node_num));
+    std::cout << "node number :" << node_num << std::endl;
+    createScoringObject();
+    m_nodes.resize(node_num + 1);
+
+    m_words.reserve(pow((double)m_k, (double)m_L + 1));
+    m_nodes[0].id = 0;
+
+    uint32_t nid = 1;
+    size_t node_size = 4 + 1 + F::L + sizeof(double);
+    char buf[node_size];
+    while (nid <= node_num)
+    {
+        f.read(buf, node_size);
+        m_nodes[nid].id = nid;
+
+        uint32_t pid = *((uint32_t *)(buf));
+        m_nodes[nid].parent = pid;
+        m_nodes[pid].children.push_back(nid);
+
+        uint8_t is_leaf = *((uint8_t *)(buf + 4));
+        m_nodes[nid].descriptor = cv::Mat(1, F::L, CV_8UC1);
+        memcpy(m_nodes[nid].descriptor.data, buf + 5, F::L);
+        m_nodes[nid].weight = *((double *)(buf + 5 + F::L));
+        if (is_leaf)
+        {
+            int wid = m_words.size();
+            m_words.resize(wid+1);
+
+            m_nodes[nid].word_id = wid;
+            m_words[wid] = &m_nodes[nid];
+        }
+        else
+        {
+            m_nodes[nid].children.reserve(m_k);
+        }
+        nid++;
+    }
+    return true;
 }
 
 // --------------------------------------------------------------------------

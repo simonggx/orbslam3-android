@@ -1,0 +1,16 @@
+#ifndef SLAMJNI_H
+#define SLAMJNI_H
+#include <jni.h>
+#include "opencv2/core.hpp"
+
+namespace ORB_SLAM2
+{
+//jboolean InitORBSLAM();
+//jbyteArray TrackMonocular(jbyteArray img);
+
+void SaveImg(JNIEnv *env, jclass javaClass, jbyteArray img, jstring path);
+
+jintArray ConvertGrayToARGB(JNIEnv *env, jclass javaClass, jbyteArray img);
+}
+
+#endif
