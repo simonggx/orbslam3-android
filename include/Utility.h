@@ -7,6 +7,7 @@ namespace ORB_SLAM2
 {
 cv::Mat GrayToARGB(const cv::Mat &gray);
 jintArray MatToJintArray(const cv::Mat &mat, JNIEnv *env);
+cv::Mat BGRTOARGB(const cv::Mat &bgr);
 
 class JByteArrayToMat
 {

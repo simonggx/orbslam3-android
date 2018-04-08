@@ -1481,17 +1481,17 @@ void TemplatedVocabulary<TDescriptor, F>::saveToBinaryFile(const std::string &fi
     f.write((const char *)&tmp_uint32t, sizeof(tmp_uint32t));
     std::cout << "node number :" << m_nodes.size() - 1 << std::endl;
 
-    size_t node_size = 4 + 1 + F::L + sizeof(double);
+    size_t node_size = 4 + 4 + F::L + sizeof(double);
     char buf[node_size];
     for (size_t i = 1; i < m_nodes.size(); ++i)
     {
         const Node &node = m_nodes[i];
         tmp_uint32t = node.parent;
         memcpy(buf, &tmp_uint32t, 4);
-        uint8_t is_leaf = node.isLeaf() ? 1 : 0;
-        memcpy(buf + 4, &is_leaf, 1);
-        memcpy(buf + 5, node.descriptor.data, F::L);
-        memcpy(buf + 5 + F::L, &node.weight, sizeof(double));
+        uint32_t is_leaf = node.isLeaf() ? 1 : 0;
+        memcpy(buf + 4, &is_leaf, 4);
+        memcpy(buf + 8, node.descriptor.data, F::L);
+        memcpy(buf + 8 + F::L, &node.weight, sizeof(double));
         f.write(buf, node_size);
     }
 }
@@ -1529,7 +1529,7 @@ bool TemplatedVocabulary<TDescriptor, F>::loadFromBinaryFile(const std::string &
     m_nodes[0].id = 0;
 
     uint32_t nid = 1;
-    size_t node_size = 4 + 1 + F::L + sizeof(double);
+    size_t node_size = 4 + 4 + F::L + sizeof(double);
     char buf[node_size];
     while (nid <= node_num)
     {
@@ -1540,10 +1540,10 @@ bool TemplatedVocabulary<TDescriptor, F>::loadFromBinaryFile(const std::string &
         m_nodes[nid].parent = pid;
         m_nodes[pid].children.push_back(nid);
 
-        uint8_t is_leaf = *((uint8_t *)(buf + 4));
+        uint32_t is_leaf = *((uint8_t *)(buf + 4));
         m_nodes[nid].descriptor = cv::Mat(1, F::L, CV_8UC1);
-        memcpy(m_nodes[nid].descriptor.data, buf + 5, F::L);
-        m_nodes[nid].weight = *((double *)(buf + 5 + F::L));
+        memcpy(m_nodes[nid].descriptor.data, buf + 8, F::L);
+        m_nodes[nid].weight = *((double *)(buf + 8 + F::L));
         if (is_leaf)
         {
             int wid = m_words.size();
