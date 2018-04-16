@@ -26,6 +26,7 @@
 #include<opencv2/features2d/features2d.hpp>
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "Log.h"
 
 #include<stdint.h>
 
@@ -423,6 +424,7 @@ int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f
             continue;
 
         vector<size_t> vIndices2 = F2.GetFeaturesInArea(vbPrevMatched[i1].x,vbPrevMatched[i1].y, windowSize,level1,level1);
+        Log::GetLog()->info("search correspondence for point {} in frame1, candidate num if frame2 {}", i1, vIndices2.size());
 
         if(vIndices2.empty())
             continue;

@@ -32,6 +32,7 @@
 
 #include"Optimizer.h"
 #include"PnPsolver.h"
+#include "Log.h"
 
 #include<iostream>
 
@@ -87,18 +88,18 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mMinFrames = 0;
     mMaxFrames = fps;
 
-    cout << endl << "Camera Parameters: " << endl;
-    cout << "- fx: " << fx << endl;
-    cout << "- fy: " << fy << endl;
-    cout << "- cx: " << cx << endl;
-    cout << "- cy: " << cy << endl;
-    cout << "- k1: " << DistCoef.at<float>(0) << endl;
-    cout << "- k2: " << DistCoef.at<float>(1) << endl;
+    Log::GetLog()->info("Camera Parameters: ");
+    Log::GetLog()->info("- fx: {}", fx);
+    Log::GetLog()->info("- fy: {}", fy);
+    Log::GetLog()->info("- cx: {}", cx);
+    Log::GetLog()->info("- cx: {}", cy);
+    Log::GetLog()->info("- k1: {}", DistCoef.at<float>(0));
+    Log::GetLog()->info("- k2: {}", DistCoef.at<float>(1));
     if(DistCoef.rows==5)
-        cout << "- k3: " << DistCoef.at<float>(4) << endl;
-    cout << "- p1: " << DistCoef.at<float>(2) << endl;
-    cout << "- p2: " << DistCoef.at<float>(3) << endl;
-    cout << "- fps: " << fps << endl;
+        Log::GetLog()->info("- k3: {}", DistCoef.at<float>(4));
+    Log::GetLog()->info("- p1: {}", DistCoef.at<float>(2));
+    Log::GetLog()->info("- p2: {}", DistCoef.at<float>(3));
+    Log::GetLog()->info("- fps: {}", fps);
 
 
     int nRGB = fSettings["Camera.RGB"];
@@ -125,12 +126,12 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     if(sensor==System::MONOCULAR)
         mpIniORBextractor = new ORBextractor(2*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
-    cout << endl  << "ORB Extractor Parameters: " << endl;
-    cout << "- Number of Features: " << nFeatures << endl;
-    cout << "- Scale Levels: " << nLevels << endl;
-    cout << "- Scale Factor: " << fScaleFactor << endl;
-    cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
+    Log::GetLog()->info("ORB Extractor Parameters: ");
+    Log::GetLog()->info("- Number of Features: {}", nFeatures);
+    Log::GetLog()->info("- Scale Levels: {}", nLevels);
+    Log::GetLog()->info("- Scale Factor: {}", fScaleFactor);
+    Log::GetLog()->info("- Initial Fast Threshold: {}", fIniThFAST);
+    Log::GetLog()->info("- Minimum Fast Threshold: {}", fMinThFAST);
 
     if(sensor==System::STEREO || sensor==System::RGBD)
     {
@@ -259,6 +260,8 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+
+    Log::GetLog()->info("a new frame is grabbed, feature number is: {}", mCurrentFrame.mvKeys.size());
 
     Track();
 
@@ -559,12 +562,13 @@ void Tracking::StereoInitialization()
 
 void Tracking::MonocularInitialization()
 {
-
     if(!mpInitializer)
     {
+        Log::GetLog()->info("start initialization");
         // Set Reference Frame
         if(mCurrentFrame.mvKeys.size()>100)
         {
+            Log::GetLog()->info("set current frame as first frame");
             mInitialFrame = Frame(mCurrentFrame);
             mLastFrame = Frame(mCurrentFrame);
             mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
@@ -586,6 +590,7 @@ void Tracking::MonocularInitialization()
         // Try to initialize
         if((int)mCurrentFrame.mvKeys.size()<=100)
         {
+            Log::GetLog()->info("feature num of second frame is too little! reset initialization");
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
@@ -596,9 +601,12 @@ void Tracking::MonocularInitialization()
         ORBmatcher matcher(0.9,true);
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
+        Log::GetLog()->info("initialization: match number between two frame is: {}", nmatches);
+
         // Check if there are enough correspondences
         if(nmatches<100)
         {
+            Log::GetLog()->info("not enough correspondence! reset initialization");
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
             return;
@@ -610,6 +618,7 @@ void Tracking::MonocularInitialization()
 
         if(mpInitializer->Initialize(mCurrentFrame, mvIniMatches, Rcw, tcw, mvIniP3D, vbTriangulated))
         {
+            Log::GetLog()->info("initialize succeed!");
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
                 if(mvIniMatches[i]>=0 && !vbTriangulated[i])
@@ -627,6 +636,10 @@ void Tracking::MonocularInitialization()
             mCurrentFrame.SetPose(Tcw);
 
             CreateInitialMapMonocular();
+        }
+        else
+        {
+            Log::GetLog()->info("initialize fail!");
         }
     }
 }

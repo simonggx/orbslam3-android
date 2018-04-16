@@ -21,6 +21,7 @@
 #include "Frame.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
+#include "Log.h"
 #include <thread>
 
 namespace ORB_SLAM2
@@ -461,6 +462,7 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         mnMinY = 0.0f;
         mnMaxY = imLeft.rows;
     }
+    Log::GetLog()->info("image bounds MinX {} MaxX {} MinY {} MaxY {}", mnMinX, mnMaxX, mnMinY, mnMaxY);
 }
 
 void Frame::ComputeStereoMatches()

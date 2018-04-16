@@ -22,6 +22,8 @@
 
 #include "System.h"
 #include "Converter.h"
+#include "Log.h"
+
 #include <thread>
 #include <iomanip>
 #include<unistd.h>
@@ -40,36 +42,35 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
 
-    cout << "Input sensor was set to: ";
+    Log::GetLog()->info("Input sensor was set to: ");
 
     if(mSensor==MONOCULAR)
-        cout << "Monocular" << endl;
+        Log::GetLog()->info("Monocular");
     else if(mSensor==STEREO)
-        cout << "Stereo" << endl;
+        Log::GetLog()->info("Stereo");
     else if(mSensor==RGBD)
-        cout << "RGB-D" << endl;
+        Log::GetLog()->info("RGB-D");
 
     //Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
     if(!fsSettings.isOpened())
     {
-       cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+       Log::GetLog()->error("Failed to open settings file at: {}",  strSettingsFile.c_str());
        exit(-1);
     }
 
 
     //Load ORB Vocabulary
-    cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
+    Log::GetLog()->info("Loading ORB Vocabulary. This could take a while...");
 
     mpVocabulary = new ORBVocabulary();
     bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
     if(!bVocLoad)
     {
-        cerr << "Wrong path to vocabulary. " << endl;
-        cerr << "Falied to open at: " << strVocFile << endl;
+        Log::GetLog()->error("open vocabulary file {} fail!", strVocFile.c_str());
         exit(-1);
     }
-    cout << "Vocabulary loaded!" << endl << endl;
+    Log::GetLog()->info("Vocabulary loaded!");
 
     //Create KeyFrame Database
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
@@ -212,7 +213,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)
     {
-        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
+        Log::GetLog()->error("ERROR: you called TrackMonocular but input sensor was not set to Monocular.");
         exit(-1);
     }
 
