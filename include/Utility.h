@@ -12,14 +12,15 @@ cv::Mat BGRTOARGB(const cv::Mat &bgr);
 class JByteArrayToMat
 {
 public:
-    JByteArrayToMat(jbyteArray byteArray, JNIEnv *env);
+    JByteArrayToMat(jbyteArray byteArray, JNIEnv *env, const cv::Size &size);
     ~JByteArrayToMat();
-    cv::Mat operator()(cv::Size size, int type);
+    cv::Mat operator()(int type);
 
 private:
     jbyteArray mByteArray;
     JNIEnv *mEnv;
     jbyte *mData = nullptr;
+    cv::Size mSize;
 };
 }
 

@@ -47,7 +47,6 @@ ${EIGEN3_INCLUDE_DIR}
 /home/zhufan/Android/Sdk/ndk-bundle/sysroot/usr/include
 )
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY /home/zhufan/ORB_SLAM/app/libs/armeabi-v7a)
 add_definitions(-D__ANDROID__)
 
 add_library(${PROJECT_NAME} SHARED

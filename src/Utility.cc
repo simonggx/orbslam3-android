@@ -57,16 +57,17 @@ jintArray MatToJintArray(const cv::Mat &mat, JNIEnv *env)
     return intArray;
 }
 
-JByteArrayToMat::JByteArrayToMat(jbyteArray byteArray, JNIEnv *env):
+JByteArrayToMat::JByteArrayToMat(jbyteArray byteArray, JNIEnv *env, const cv::Size &size):
     mByteArray(byteArray),
-    mEnv(env)
+    mEnv(env),
+    mSize(size)
 {
      mData = mEnv->GetByteArrayElements(mByteArray, NULL);
 }
 
-cv::Mat JByteArrayToMat::operator()(cv::Size size, int type)
+cv::Mat JByteArrayToMat::operator()(int type)
 {
-    cv::Mat mat(size,type, (void *)mData);
+    cv::Mat mat(mSize,type, (void *)mData);
     return mat;
 }
 
