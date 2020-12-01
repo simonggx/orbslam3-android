@@ -3,7 +3,7 @@
 
 #include "opencv2/core.hpp"
 #include <jni.h>
-namespace ORB_SLAM2
+namespace ORB_SLAM3
 {
 cv::Mat GrayToARGB(const cv::Mat &gray);
 jintArray MatToJintArray(const cv::Mat &mat, JNIEnv *env);

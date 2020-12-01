@@ -4,7 +4,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/core.hpp"
 
-namespace ORB_SLAM2
+namespace ORB_SLAM3
 {
 cv::Mat GrayToARGB(const cv::Mat &gray)
 {
